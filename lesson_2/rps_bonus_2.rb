@@ -66,10 +66,10 @@ class Human < Player
     n = ''
 
     loop do
-      system 'clear'
       puts "Hi there - What's your name?"
-      n = gets.chomp
-      break unless n.empty?
+      n = gets.chomp.strip
+      break unless n.empty? || n.squeeze == ' '
+      system 'clear'
       puts "Sorry, must enter a value."
     end
 
@@ -88,7 +88,7 @@ class Human < Player
           choice = move
         end
       end
-      break if !choice.nil?
+      break unless choice.nil?
       system 'clear'
       puts "Sorry, #{short_choice} is an invalid choice."
       puts ""
@@ -101,9 +101,10 @@ end
 class Computer < Player
   def analyze_wins(game_history)
     moves_that_won = []
-    game_history.each do |_, game_info|
-      moves_that_won << game_info[:computer] if game_info[:winner] ==
-                                                name.to_s
+    game_history.each_value do |game_info|
+      if game_info[:winner] == name.to_s
+        moves_that_won << game_info[:computer]
+      end
     end
     moves_that_won
   end
@@ -234,7 +235,7 @@ class Score
   end
 
   def ten_wins?
-    self.wins >= 10
+    wins >= 10
   end
 
   def reset
@@ -391,7 +392,6 @@ class RPSGame
     end
 
     return false if answer.downcase == 'n'
-    return true if answer.downcase == 'y'
   end
 
   def new_game_same_players?
