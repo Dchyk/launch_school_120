@@ -135,11 +135,7 @@ class Game
     deal_cards
     show_cards
     player_turn
-    if player.busted?
-      busted_message
-    else
-      dealer_turn
-    end
+    dealer_turn unless player.busted?
     show_cards
     show_result
   end
@@ -178,7 +174,9 @@ class Game
   end
 
   def show_result
-    if dealer.busted?
+    if player.busted? 
+      puts "You busted! Dealer wins!"
+    elsif dealer.busted?
       puts "Dealer busted! You win!"
     elsif !player.busted? && player > dealer
       puts "Player wins!"
