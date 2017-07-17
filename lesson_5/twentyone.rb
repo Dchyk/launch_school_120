@@ -26,7 +26,7 @@ class Player < Participant
   def hit
     # Choose whether to hit or stay
   end
-  
+
 end
 
 class Dealer
@@ -44,7 +44,6 @@ end
 
 class Deck
   
-
   def initialize
     # Needs some data structure to hold the deck
     # An array of card objects?
@@ -119,7 +118,7 @@ class Game
   end
 
   def deal_cards
-    deck.deal
+    deck.deal_first_hand
   end
 
   def show_initial_cards
