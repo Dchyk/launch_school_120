@@ -98,7 +98,7 @@ end
 
 class Player
   WINNING_ROUNDS = 5
-  attr_reader :marker
+  attr_accessor :marker
   attr_accessor :score
 
   def initialize(marker)
@@ -119,7 +119,27 @@ class Player
   end
 end
 
+class Human < Player
+  NAME = "Human"
+
+  attr_accessor :name
+
+  def initialize(marker)
+    @name = name
+    super
+  end
+end
+
 class Computer < Player
+  NAME = "Hal"
+
+  attr_reader :name
+
+  def initialize(marker)
+    @name = NAME
+    super
+  end
+
   def control_square_five(board, computer)
     if board[5].unmarked?
       5
@@ -154,15 +174,15 @@ class Computer < Player
 end
 
 class TTTGame
-  HUMAN_MARKER = "X"
+  human_marker = "X" # The default human marker
   COMPUTER_MARKER = "O"
-  FIRST_TO_MOVE = HUMAN_MARKER
+  FIRST_TO_MOVE = human_marker
 
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human, :computer, :human_marker
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
+    @human = Human.new(human_marker)
     @computer = Computer.new(COMPUTER_MARKER)
     @current_marker = FIRST_TO_MOVE
   end
@@ -170,8 +190,9 @@ class TTTGame
   def play
     clear
     display_welcome_message
-
-
+    choose_human_name
+    choose_human_marker
+    choose_first_player
 
       loop do
         display_board
@@ -192,12 +213,50 @@ class TTTGame
         display_play_again_message
       end
 
-
-
     display_goodbye_message
   end
 
   private
+
+  def choose_human_name
+    input = nil
+    loop do
+      puts "Please enter your name:"
+      input = gets.chomp.strip
+      break unless input == ""
+      puts "Sorry, must enter a valid name!"
+    end
+    human.name = input
+  end
+
+  def choose_human_marker
+    input = nil
+    loop do 
+      puts "Please enter a character to use as your game marker:"
+      input = gets.chomp.upcase
+      break unless input != " " && input.size != 1
+      puts "Sorry, invalid input - please choose a single character!"
+    end
+
+    human.marker = input
+  end
+
+  def choose_first_player
+    input = nil
+    loop do 
+      puts "Who do you want to play first? Choose (1) for #{human.name}" \
+      " or (2) for #{computer.name}: "
+      input = gets.chomp.to_s.strip
+      break if %w(1 2).include?(input)
+      puts "Invalid input - must enter (1) or (2)"
+    end
+
+    if input == "1"
+      @current_marker = human.marker
+    else
+      @current_marker = COMPUTER_MARKER
+    end
+  end
 
   def clear
     system 'clear'
@@ -213,12 +272,12 @@ class TTTGame
   end
 
   def display_wins
-    puts "Human: #{human.score} wins | Computer: #{computer.score} wins"
+    puts "#{human.name}: #{human.score} wins | #{computer.name}: #{computer.score} wins"
     puts ""
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}"
+    puts "You're a #{human.marker}. #{computer.name} is a #{computer.marker}"
     puts ""
     display_wins
     board.draw
@@ -270,9 +329,6 @@ end
       end
     end
 
-    
-
-
     # If Square 5 is available, pick square 5
     if !square
       square = computer.control_square_five(board, computer)
@@ -280,8 +336,7 @@ end
 
     if !square
       square = board.unmarked_keys.sample
-    end
-    
+    end    
     
     board[square] = computer.marker
     #binding.pry
@@ -326,7 +381,7 @@ end
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_marker == human.marker
   end
 
   def current_player_moves
@@ -335,7 +390,7 @@ end
       @current_marker = COMPUTER_MARKER
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @current_marker = human.marker
     end
   end
 
