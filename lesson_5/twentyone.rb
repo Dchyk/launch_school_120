@@ -11,14 +11,9 @@ module Hand
     hand_total < other_player.hand_total
   end
 
-  # May not need this? 
-  def ==(other_player)
-    hand_total == other_player.hand_total
-  end
-
   def hand_total
     total = 0
-    self.cards.each do |card|
+    @cards.each do |card|
       total += card.value
       total -= 10 if total > WINNING_HAND && card.face == 'A' # adjust for Aces
     end
@@ -45,10 +40,13 @@ class Participant
     end
     cards.join(', ')
   end
+
+  def reset
+    @cards = []
+  end
 end
 
 class Player < Participant
-
   include Hand
 
   def hit(deck)
@@ -57,7 +55,6 @@ class Player < Participant
 end
 
 class Dealer < Participant
-
   include Hand
 
   # Dealer will keep hitting until its hand is at least 17
@@ -67,10 +64,13 @@ class Dealer < Participant
       @cards << deck.deal_card
     end
   end
+
+  def display_flop
+    "#{cards.first.face} of #{cards.first.suit}, ??"
+  end
 end
 
 class Deck
-
   def initialize
     @deck = create_new_deck
   end
@@ -92,13 +92,12 @@ class Deck
   def deal_card
     @deck.pop
   end
-
 end
 
 class Card
   CARD_VALUES = { '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7,
-                 '8' => 8, '9' => 9, '10' => 10, 'J' => 10,  'Q' => 10, 
-                 'K' => 10, 'A' => 11 }
+                  '8' => 8, '9' => 9, '10' => 10, 'J' => 10,  'Q' => 10,
+                  'K' => 10, 'A' => 11 }
   SUITS = ['C', 'D', 'H', 'S']
   FACES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -117,7 +116,6 @@ class Card
   def value
     CARD_VALUES[face]
   end
-
 end
 
 class Game
@@ -130,14 +128,19 @@ class Game
   end
 
   def start
-    display_welcome_message
-    shuffle_deck
-    deal_cards
-    show_cards
-    player_turn
-    dealer_turn unless player.busted?
-    show_cards
-    show_result
+    loop do
+      display_welcome_message
+      shuffle_deck
+      deal_cards
+      show_flop
+      player_turn
+      dealer_turn unless player.busted?
+      show_all_cards
+      show_result
+      break unless play_again?
+      reset_game
+    end
+    display_goodbye_message
   end
 
   def shuffle_deck
@@ -145,44 +148,61 @@ class Game
   end
 
   def deal_cards
-    2.times do 
+    2.times do
       dealer.cards << deck.deal_card
       player.cards << deck.deal_card
     end
   end
 
-  def show_cards
-    puts "Dealer has: #{dealer.display_cards}. Total score: #{dealer.hand_total}"
-    puts "Player has: #{player.display_cards}. Total score: #{player.hand_total}"
+  def show_all_cards
+    puts "Dealer flips over his table card..."
+    puts ""
+    puts "Dealer has: #{dealer.display_cards}. Total score: " \
+    "#{dealer.hand_total}"
+    show_player_cards
+  end
+
+  def show_flop
+    puts "Dealer has: #{dealer.display_flop}. Total score: ??"
+    show_player_cards
+  end
+
+  def show_player_cards
+    puts "Player has: #{player.display_cards}. Total score: " \
+    "#{player.hand_total}"
     puts ""
   end
 
   def player_turn
     input = nil
     loop do
-      break if player.busted? 
-      puts "Do you want to hit or stay? Any key to hit, or type (s)tay:"
+      break if player.busted?
+      puts "Do you want to hit or stay? Any key to hit, or type (s) to (s)tay:"
       input = gets.chomp
-      break if %w(stay).include?(input) || player.busted?
+      break if input.start_with?('s') || player.busted?
       player.hit(deck)
-      show_cards
+      system 'clear'
+      show_flop
     end
   end
 
   def dealer_turn
+    system 'clear'
+    puts "Dealer hits..."
+    puts ""
     dealer.hit(deck)
   end
 
   def show_result
-    if player.busted? 
+    if player.busted?
       puts "You busted! Dealer wins!"
     elsif dealer.busted?
       puts "Dealer busted! You win!"
-    elsif !player.busted? && player > dealer
+    elsif player > dealer
       puts "Player wins!"
-    elsif dealer > player 
+    elsif dealer > player
       puts "Dealer wins!"
-    elsif player == dealer
+    else
       puts "It's a tie!"
     end
   end
@@ -197,6 +217,29 @@ class Game
     puts ""
   end
 
+  def play_again?
+    input = nil
+    loop do
+      puts ""
+      puts "Do you want to play again? (y/n)"
+      input = gets.chomp
+      break if %w[y n].include?(input)
+      puts "I don't understand - please type (y) or (n)"
+    end
+
+    return true if input == 'y'
+  end
+
+  def display_goodbye_message
+    puts ""
+    puts "Thanks for playing Twentyone - I enjoyed taking your money! Bye!"
+  end
+
+  def reset_game
+    player.reset
+    dealer.reset
+    @deck = Deck.new
+  end
 end
 
 Game.new.start
