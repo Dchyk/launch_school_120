@@ -86,7 +86,11 @@ class PokerHand
 
   def initialize(cards)
     @hand = []
-    5.times { @hand << cards.pop }
+    if cards.class == Deck
+      5.times { @hand << cards.draw }
+    else
+      5.times { @hand << cards.pop }
+    end
   end
 
   def print
